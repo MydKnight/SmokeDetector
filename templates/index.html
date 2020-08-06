@@ -2,14 +2,52 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Creating Real-Time Charts with Flask</title>
+    <title>Fog Machine Setup</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
 <div class="container">
     <div class="row">
-        <div class="col-12">
+        <h1 class='col-6 offset-3'>Fog Machine Setup</h1>
+    </div>
+
+    <div class="row">
+        <div class='col-3 offset-3'>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="basic-addon1">Temperature</span>
+                </div>
+                <input type="text" class="form-control" placeholder="72" aria-label="Temperature" aria-describedby="basic-addon1">
+            </div>
+        </div>
+        <div class='col-3'>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="basic-addon1">Moisture</span>
+                </div>
+                <input type="text" class="form-control" placeholder="72" aria-label="Moisture" aria-describedby="basic-addon1">
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-3">
+            0.5 micron Particles: <br /><button type="button" id="pointFiveButton" class="btn text-center btn-outline-primary">Primary</button><br/>
+            1 micron Particles: <br/><button type="button" id="oneButton" class="btn btn-outline-primary">Primary</button><br/>
+            2.5 micron Particles: <br/><button type="button" id="twoPointFiveButton" class="btn btn-outline-primary">Primary</button><br/>
+            4 micron Particles: <br/><button type="button" id="fourButton" class="btn btn-outline-primary">Primary</button><br/>
+            10 micron Particles: <br/><button type="button" id="tenButton" class="btn btn-outline-primary">Primary</button><br/>
+            <hr />
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="basic-addon1">Time Constant</span>
+                </div>
+                <input type="text" class="form-control" placeholder="10" aria-label="Time Constant" aria-describedby="basic-addon1">
+            </div>
+        </div>
+        <div class="col-9">
             <div class="card">
                 <div class="card-body">
                     <canvas id="canvas"></canvas>
@@ -17,7 +55,16 @@
             </div>
         </div>
     </div>
+    <div class="row startcalibrate">
+        <div class='col-3 offset-4'>
+            <button type="button" id="startButton" class="btn btn-outline-success">Calibrate</button>
+        </div>
+        <div class='col-3'>
+            <button type="button" id="calibrateButton" class="btn btn-outline-warning">Start</button>
+        </div>
+    </div>
 </div>
+
 <!--suppress JSUnresolvedLibraryURL -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
 <!--suppress JSUnresolvedLibraryURL -->
@@ -25,15 +72,53 @@
 <!--suppress JSUnresolvedLibraryURL -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
 <script>
+    document.querySelectorAll('button').forEach(item => {
+        item.addEventListener('click', (e)=> {
+            if (e.target.className.indexOf('clicked') === -1) {
+                e.target.className += ' clicked';
+            } else {
+                e.target.className = e.target.className.replace(' clicked', '');
+            }
+        })
+    });
+    
     $(document).ready(function () {
         const config = {
             type: 'line',
             data: {
                 labels: [],
                 datasets: [{
-                    label: "Random Dataset",
-                    backgroundColor: 'rgb(255, 99, 132)',
-                    borderColor: 'rgb(255, 99, 132)',
+                    label: "0.5 microns",
+                    backgroundColor: 'rgb(255, 89, 94)',
+                    borderColor: 'rgb(255, 89, 94)',
+                    data: [],
+                    fill: false,
+                },
+                {
+                    label: "1 microns",
+                    backgroundColor: 'rgb(255, 202, 58)',
+                    borderColor: 'rgb(255, 202, 58)',
+                    data: [],
+                    fill: false,
+                },
+                {
+                    label: "2.5 microns",
+                    backgroundColor: 'rgb(138, 201, 38)',
+                    borderColor: 'rgb(138, 201, 38)',
+                    data: [],
+                    fill: false,
+                },
+                {
+                    label: "4 microns",
+                    backgroundColor: 'rgb(25, 130, 196)',
+                    borderColor: 'rgb(25, 130, 196)',
+                    data: [],
+                    fill: false,
+                },
+                {
+                    label: "10 microns",
+                    backgroundColor: 'rgb(106, 76, 147)',
+                    borderColor: 'rgb(106, 76, 147)',
                     data: [],
                     fill: false,
                 }],
@@ -42,7 +127,7 @@
                 responsive: true,
                 title: {
                     display: true,
-                    text: 'Creating Real-Time Charts with Flask'
+                    text: 'Current Sensor Data'
                 },
                 tooltips: {
                     mode: 'index',
@@ -82,10 +167,25 @@
             if (config.data.labels.length === 20) {
                 config.data.labels.shift();
                 config.data.datasets[0].data.shift();
+                config.data.datasets[1].data.shift();
+                config.data.datasets[2].data.shift();
+                config.data.datasets[3].data.shift();
+                config.data.datasets[4].data.shift();
             }
             config.data.labels.push(data.time);
-            config.data.datasets[0].data.push(data.value);
+            config.data.datasets[0].data.push(data.obs1);
+            config.data.datasets[1].data.push(data.obs2);
+            config.data.datasets[2].data.push(data.obs3);
+            config.data.datasets[3].data.push(data.obs4);
+            config.data.datasets[4].data.push(data.obs5);
             lineChart.update();
+
+            // Update the Buttons with the current values
+            document.querySelector('#pointFiveButton').innerHTML = data.obs1;
+            document.querySelector('#oneButton').innerHTML = data.obs2;
+            document.querySelector('#twoPointFiveButton').innerHTML = data.obs3;
+            document.querySelector('#fourButton').innerHTML = data.obs4;
+            document.querySelector('#tenButton').innerHTML = data.obs5;
         }
     });
 </script>

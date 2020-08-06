@@ -1,0 +1,50 @@
+.startcalibrate{
+    padding-top: 3em;
+}
+
+/* Button Styles for the overlay buttons */
+#pointFiveButton{
+    color: rgb(255, 89, 94);
+    border-color: rgb(255, 89, 94);
+}
+#pointFiveButton.clicked{
+    color: white;
+    background-color: rgb(255, 89, 94);
+    border-color: white;
+}
+#oneButton{
+    color: rgb(255, 202, 58);
+    border-color: rgb(255, 202, 58);
+}
+#oneButton.clicked{
+    color: white;
+    background-color: rgb(255, 202, 58);
+    border-color: white;
+}
+#twoPointFiveButton{
+    color: rgb(138, 201, 38);
+    border-color: rgb(138, 201, 38);
+}
+#twoPointFiveButton.clicked{
+    color: white;
+    background-color: rgb(138, 201, 38);
+    border-color: white;
+}
+#fourButton{
+    color: rgb(25, 130, 196);
+    border-color: rgb(25, 130, 196);
+}
+#fourButton.clicked{
+    color: white;
+    background-color: rgb(25, 130, 196);
+    border-color: white;
+}
+#tenButton{
+    color: rgb(106, 76, 147);
+    border-color: rgb(106, 76, 147);
+}
+#tenButton.clicked{
+    color: white;
+    background-color: rgb(106, 76, 147);
+    border-color: white;
+}
