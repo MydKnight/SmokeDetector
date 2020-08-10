@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="favicon.ico" type="image/x-icon"/>
+    <meta charset="UTF-8">
+    <title>Fog Machine Setup</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <h1 class='col-6 offset-3'>Fog Machine Calibrate</h1>
+    </div>
+    <div class="row">
+        {% include 'topNav.html' %}
+    </div>
+    <div class="row">
+        <div class="col-3">
+            {% include 'leftNav.html' %}
+        </div>
+        <div class="col-9">
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="canvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr />
+    
+    <div class="row navigations">
+        <div class='col-2 offset-3'>
+            <a href="/run" type="button" id="startButton" class="btn btn-danger">Run</a>
+        </div>
+        <div class='col-2'>
+            <a href="/" type="button" id="setupButton" class="btn btn-primary">Setup</a>
+        </div>
+        <div class='col-2'>
+            <button type="button" id="operationButton" class="btn btn-success">Operation</button>
+        </div>
+        <div class='col-2'>
+            <button type="button" id="fogButton" class="btn btn-outline-secondary">Fog</button>
+        </div>
+    </div>
+</div>
+
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+<script>
+        
+    // Set up the JS Chart functionality
+    $(document).ready(function () {
+        const config = {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Particle Average",
+                    backgroundColor: 'rgb(255, 89, 94)',
+                    borderColor: 'rgb(255, 89, 94)',
+                    data: [],
+                    fill: false,
+                },
+                {
+                    label: "Set Point",
+                    backgroundColor: 'rgb(255, 202, 58)',
+                    borderColor: 'rgb(255, 202, 58)',
+                    data: [],
+                    fill: false,
+                }
+                ],
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Average Sensor Data'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Time'
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Value'
+                        }
+                    }]
+                }
+            }
+        };
+
+        const context = document.getElementById('canvas').getContext('2d');
+
+        const lineChart = new Chart(context, config);
+
+        const source = new EventSource("/chart-data/calibrate");
+
+        source.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (config.data.labels.length === 20) {
+                config.data.labels.shift();
+                config.data.datasets[0].data.shift();
+                config.data.datasets[1].data.shift();
+            }
+            config.data.labels.push(data.time);
+            // Calculate the average of the slected params
+            // Use the Set Value for dataset 1
+            config.data.datasets[0].data.push(data.average);
+            config.data.datasets[1].data.push(data.setPoint);
+            lineChart.update();
+        }
+    });
+</script>
+</body>
+</html>

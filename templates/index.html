@@ -35,18 +35,7 @@
     
     <div class="row">
         <div class="col-3">
-            0.5 micron Particles: <br /><button type="button" id="pointFiveButton" class="{{ button_list[0] }}">Initializing</button><br/>
-            1 micron Particles: <br/><button type="button" id="oneButton" class="{{ button_list[1] }}">Initializing</button><br/>
-            2.5 micron Particles: <br/><button type="button" id="twoPointFiveButton" class="{{ button_list[2] }}">Initializing</button><br/>
-            4 micron Particles: <br/><button type="button" id="fourButton" class="{{ button_list[3] }}">Initializing</button><br/>
-            10 micron Particles: <br/><button type="button" id="tenButton" class="{{ button_list[4] }}">Initializing</button><br/>
-            <hr />
-            <div class="input-group mb-3">
-                <div class="input-group-prepend">
-                    <span class="input-group-text" id="basic-addon1">Time Constant</span>
-                </div>
-                <input type="text" class="form-control" placeholder="10" aria-label="Time Constant" aria-describedby="basic-addon1">
-            </div>
+            
         </div>
         <div class="col-9">
             <div class="card">
@@ -56,13 +45,15 @@
             </div>
         </div>
     </div>
-    <div class="row startcalibrate">
+    <hr />
+    {% include 'observations.html' %}
+    <div class="row navigations">
         <p>These Buttons should not be available unless at least one particle type is checked.</p>
         <div class='col-3 offset-3'>
-            <a href="/calibrate" type="button" id="startButton" class="btn btn-success">Calibrate</a>
+            <a href="/calibrate" type="button" id="calibrateButton" class="btn btn-warning">Calibrate</a>
         </div>
         <div class='col-3'>
-            <button type="button" id="calibrateButton" class="btn btn-warning">Start</button>
+            <button type="button" id="operationButton" class="btn btn-success">Operation</button>
         </div>
         <div class='col-3'>
             <button type="button" id="fogButton" class="btn btn-outline-secondary">Fog</button>
@@ -77,34 +68,21 @@
 <!--suppress JSUnresolvedLibraryURL -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
 <script>
+    let obs1 = 0;
+    let obs2 = 0;
+    let obs3 = 0;
+    let obs4 = 0;
+    let obs5 = 0;
+    let globalParticleValue = "{{ button_list[5] }}";
+
     // Handler for Particle Buttons
     document.querySelectorAll('.particleButton').forEach(item => {
         item.addEventListener('click', (e)=> {
             // Add the class of clicked and add this reading to the session to store what we're tracking. 
             if (e.target.className.indexOf('clicked') === -1) {
                 e.target.className += ' clicked';
-
-                /* let clickStatus = {
-                    "particleSize": [],
-                    "particleValue": ''
-                }
-                document.querySelectorAll('.particleButton').forEach(item => {
-                    if (item.classList.contains('clicked')){
-                        const particle = item.id;
-                        clickStatus["particleSize"].push(particle);
-                        clickStatus["particleValue"] += 1;
-                    }
-                }) */
             } else {
                 e.target.className = e.target.className.replace(' clicked', '');
-                
-                /* document.querySelectorAll('.particleButton').forEach(item => {
-                    if (item.classList.contains('clicked')){
-                        const particle = item.id;
-                        clickStatus["particleSize"].push(particle);
-                        clickStatus["particleValue"] += 0
-                    }
-                }) */
             }
 
             // Communicate the array of clicked elements back to the configuration settings endpoint
@@ -116,6 +94,7 @@
                     particleValue += "0";
                 }
             })
+            globalParticleValue = particleValue;
             
             $.ajax({
                 type: 'POST',
@@ -167,6 +146,50 @@
 
     }, false) 
     
+    // Handler for Calibrate button
+    document.querySelector('#calibrateButton').addEventListener('click', function(e){
+        let setPoint = 0;
+
+        // Calculate the average of selected Particles
+        let sumParticles = 0;
+        let sumCount = 0;
+        let digits = globalParticleValue.toString().split('');
+        let realDigits = digits.map(Number)
+        if (realDigits[0] == 1){
+            sumParticles += obs1;
+            sumCount ++;
+        }
+        if (realDigits[1] == 1){
+            sumParticles += obs2;
+            sumCount ++;
+        }
+        if (realDigits[2] == 1){
+            sumParticles += obs3;
+            sumCount ++;
+        }
+        if (realDigits[3] == 1){
+            sumParticles += obs4;
+            sumCount ++;
+        }
+        if (realDigits[4] == 1){
+            sumParticles += obs5;
+            sumCount ++;
+        }
+        setPoint = sumParticles/sumCount;
+
+        $.ajax({
+                type: 'POST',
+                url: '/storeParams/setpoint/'+setPoint,
+                success: function(data){
+                    console.log(data);
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                    console.log("Status: " + textStatus); 
+                    console.log("Error: " + errorThrown); 
+                }
+            });
+    });
+
     // Set up the JS Chart functionality
     $(document).ready(function () {
         const config = {
@@ -266,12 +289,17 @@
             config.data.datasets[4].data.push(data.obs5);
             lineChart.update();
 
-            // Update the Buttons with the current values
+            // Update the Buttons with the current values, and store to a JS Variable for reading
             document.querySelector('#pointFiveButton').innerHTML = data.obs1;
+            obs1 = data.obs1;
             document.querySelector('#oneButton').innerHTML = data.obs2;
+            obs2 = data.obs2;
             document.querySelector('#twoPointFiveButton').innerHTML = data.obs3;
+            obs3 = data.obs3;
             document.querySelector('#fourButton').innerHTML = data.obs4;
+            obs4 = data.obs4;
             document.querySelector('#tenButton').innerHTML = data.obs5;
+            obs5 = data.obs5;
         }
     });
 </script>

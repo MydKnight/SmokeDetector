@@ -6,6 +6,7 @@ class ConfigManager:
     def __init__(self):
         # If there is no file in configs, create one
         if not os.listdir('./configs'):
+            print("Creating Log")
             self.filename = './configs/' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.ini' 
             self.config_settings = configparser.ConfigParser()
             self.config_settings['DEFAULT'] = {'OperationMode': '',
@@ -22,6 +23,7 @@ class ConfigManager:
 
         # If there is, grab the most recent one and use that as our config settings. 
         else:
+            print("Updating Configs")
             configs = glob.glob('./configs/*') 
             self.filename = max(configs, key=os.path.getctime)
             self.config_settings = configparser.ConfigParser()

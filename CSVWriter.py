@@ -36,7 +36,6 @@ class CSVWriter:
         # Should add error handling here to parse that the data is valid
         with open(self.filename, 'a', newline='') as logs:
             data[-1] = data[-1].rstrip()
-            print(data)
             log_writer = csv.writer(logs, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             log_writer.writerow(data)
 
