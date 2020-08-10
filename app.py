@@ -1,57 +1,72 @@
 from flask import Flask, Response, render_template, session, request
-import time, json, serial, csv, datetime, random
+import json, serial, random, SerialReader, CSVWriter, ConfigManager, SmokeComms, time
 
 app = Flask(__name__)
+app.secret_key = "OonFooFoo"
+smokeControl = SmokeComms.SmokeComms()
+sessionLog = CSVWriter.CSVWriter()
+currentConfig = ConfigManager.ConfigManager()
 
 @app.route('/')
 def overview():
-    return render_template('index.html')
+    button_list = []
+    particle_config = currentConfig.get_setting("selectedsizes")
+    particle_settings = list(map(int, str(particle_config)))
+    print (particle_settings)
+    if particle_settings[0] == 0:
+        button_list.append("btn particleButton text-center btn-outline-primary")
+    else:
+        button_list.append("btn particleButton clicked text-center btn-outline-primary")
+    if particle_settings[1] == 0:
+        button_list.append("btn particleButton text-center btn-outline-primary")
+    else:
+        button_list.append("btn particleButton clicked text-center btn-outline-primary")
+    if particle_settings[2] == 0:
+        button_list.append("btn particleButton text-center btn-outline-primary")
+    else:
+        button_list.append("btn particleButton clicked text-center btn-outline-primary")
+    if particle_settings[3] == 0:
+        button_list.append("btn particleButton text-center btn-outline-primary")
+    else:
+        button_list.append("btn particleButton clicked text-center btn-outline-primary")
+    if particle_settings[4] == 0:
+        button_list.append("btn particleButton text-center btn-outline-primary")
+    else:
+        button_list.append("btn particleButton clicked text-center btn-outline-primary")
+
+    print (button_list)
+
+    return render_template('index.html', button_list = button_list)
+
+@app.route('/storeParams/<updateSetting>/<updateValue>', methods=['POST'])
+def store_params(updateSetting, updateValue):
+   currentConfig.updateConfig(updateSetting, updateValue)
+   return "Config Updated"
+
+@app.route('/fireFog/<state>/<sleepTime>', methods=['POST'])
+def fire_fog(state=None, sleepTime=0, flow=255):
+    
+    print("Sleep Time: " + sleepTime)
+    # If sleepTime = 0, Send start/stop until toggled
+    if sleepTime == '0':
+        if state == "start":
+            smokeControl.start_smoke()
+            return "Smoke Started"
+        else:
+            smokeControl.stop_smoke()
+            return "Smoke Stopped"
+    # Else, Send start, wait <time>seconds, then send stop
+    else:
+        if state == "start":
+            smokeControl.start_smoke()
+            time.sleep(int(sleepTime))
+            smokeControl.stop_smoke()
+            return "Smoke Cycle Complete"
 
 @app.route('/chart-data')
 def chart_data():
-    def generate_random_data():
-        while True:
-            json_data = json.dumps(
-                {'time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'value': random.random() * 100})
-            yield f"data:{json_data}\n\n"
-            time.sleep(1)
-
-    def read_sensor_data():
-        # Create CSV file to store data from this session 
-        with open ('./logs/' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + 'log.csv', mode='w') as logger:
-            log_writer = csv.writer(logger, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            
-            # Add Headers to CSV
-            log_writer.writerow(['Observation 1', 'Observation 2', 'Observation 3', 'Observation 4', 'Observation 5', 'Observation 6', 'Observation 7', 'Observation 8', 'Observation 9', 'Observation 10'])
-            
-            with serial.Serial('/dev/ttyUSB0', 115200, timeout=1) as ser:
-                while True:
-                    line = ser.readline()
-                    # First observation might be empty, if so, return
-                    line = line.decode('utf-8')
-                    if len(line) < 10:
-                        print ("Line too short: " + line)
-                        return
-
-                    # Parse csv into JS array
-                    observations = line.split(',')
-
-                    # Write data to CSV file (May need to do extra work to get new rows)
-                    log_writer.writerow([observations[0], observations[1], observations[2], observations[3], observations[4], observations[5], observations[6], observations[7], observations[8], observations[9]])
-
-                    # Return the data to the endpoint calling
-                    json_data = json.dumps(
-                        {
-                            'time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 
-                            'obs1': float(observations[4]),
-                            'obs2': float(observations[5]),
-                            'obs3': float(observations[6]),
-                            'obs4': float(observations[7]),
-                            'obs5': float(observations[8])})
-                    yield f"data:{json_data}\n\n"
-                    time.sleep(2)
-
-    return Response(read_sensor_data(), mimetype='text/event-stream')
+    ser = SerialReader.SerialReader(csvLog = sessionLog)
+    return Response(ser.read_sensor_data(), mimetype='text/event-stream')
 
 if __name__ == '__main__':
     app.run(debug=True, port=80, host='0.0.0.0')
