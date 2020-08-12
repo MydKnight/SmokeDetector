@@ -9,14 +9,16 @@ class ConfigManager:
             print("Creating Log")
             self.filename = './configs/' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.ini' 
             self.config_settings = configparser.ConfigParser()
-            self.config_settings['DEFAULT'] = {'OperationMode': '',
+            self.config_settings['DEFAULT'] = {
                                  'PValue': '1',
                                  'IValue': '0',
                                  'DValue': '0',
                                  'SetPoint': '',
                                  'SelectedSizes': '00000',
                                  'Domain': '',
+                                 'DomainValue': '0',
                                  'SamplingInterval': '3',
+                                 'ControlInterval': '180',
                                  'ControlValue': '1'}
             with open(self.filename, 'w') as configfile:
                 self.config_settings.write(configfile)

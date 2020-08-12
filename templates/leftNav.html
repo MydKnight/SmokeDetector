@@ -2,43 +2,49 @@
     <div class="input-group-prepend">
         <span class="input-group-text fixed">Kp</span>
     </div>
-    <input type="text" class="form-control" placeholder="1" aria-label="Kp Value">
+    <input type="text" class="form-control" id="pValue" aria-label="Kp Value">
 </div>
 <div class="input-group mb-3">
     <div class="input-group-prepend">
         <span class="input-group-text fixed">Ki</span>
     </div>
-    <input type="text" class="form-control" placeholder="0" aria-label="Ki Value">    
+    <input type="text" class="form-control" id="iValue" aria-label="Ki Value">    
 </div>
 <div class="input-group mb-3">
     <div class="input-group-prepend">
         <span class="input-group-text fixed">Kd</span>
     </div>
-    <input type="text" class="form-control" placeholder="0" aria-label="Kd Value">
+    <input type="text" class="form-control" id="dValue" aria-label="Kd Value">
 </div>
 <hr />
 <div>
-    <input type="radio" name="domain" id="flowDomain">
+    <input type="radio" name="domain" value="flowDomain">
     <label for="flowDomain">Flow Domain</label><br />
-    <input type="radio" name="domain" id="timeDomain">
+    <input type="radio" name="domain" value="timeDomain">
     <label for="timeDomain">Time Domain</label><br />
     <div class="input-group mb-3">
         <div class="input-group-prepend">
             <span class="input-group-text">Time</span>
         </div>
-        <input type="text" class="form-control" placeholder="10" aria-label="Time Constant" aria-describedby="basic-addon1">
+        <input type="text" class="form-control" id="timeValue" aria-label="Time Constant">
     </div>
     <div class="input-group mb-3">
         <div class="input-group-prepend">
             <span class="input-group-text">Flow</span>
         </div>
-        <input type="text" class="form-control" placeholder="10" aria-label="Flow Constant" aria-describedby="basic-addon1">
+        <input type="text" class="form-control" id="flowValue" aria-label="Flow Constant">
     </div>
 </div>
 <hr />
 <div class="input-group mb-3">
     <div class="input-group-prepend">
-        <span class="input-group-text">Polling (secs)</span>
+        <span class="input-group-text">Sample Interval</span>
     </div>
-    <input type="text" class="form-control" placeholder="10" aria-label="Observation Constant" aria-describedby="basic-addon1">
+    <input type="text" class="form-control" id="sampleIntervalValue" aria-label="Observation Constant">
+</div>
+<div class="input-group mb-3">
+    <div class="input-group-prepend">
+        <span class="input-group-text">Control Interval</span>
+    </div>
+    <input type="text" class="form-control" id="controlIntervalValue" aria-label="Control Constant">
 </div>

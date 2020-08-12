@@ -1,5 +1,6 @@
+import json, serial, random, SerialReader, CSVWriter, ConfigManager, SmokeComms, time, sys
 from flask import Flask, Response, render_template, session, request
-import json, serial, random, SerialReader, CSVWriter, ConfigManager, SmokeComms, time
+from simple_pid import PID
 
 app = Flask(__name__)
 app.secret_key = "OonFooFoo"
@@ -9,12 +10,12 @@ currentConfig = ConfigManager.ConfigManager()
 
 @app.route('/')
 def overview():
-    return render_template('index.html', button_list = getButtonList())
+    return render_template('index.html', button_list = getConfigParams())
 
 @app.route('/calibrate')
 def calibrate():
     # Read the current Set Point, and Selected Obs and pass these as parameters to the template
-    return render_template('calibrate.html', button_list = getButtonList())
+    return render_template('calibrate.html', button_list = getConfigParams())
 
 @app.route('/storeParams/<updateSetting>/<updateValue>', methods=['POST'])
 def store_params(updateSetting, updateValue):
@@ -41,6 +42,21 @@ def fire_fog(state=None, sleepTime=0, flow=255):
             smokeControl.stop_smoke()
             return "Smoke Cycle Complete"
 
+@app.route('/calculateControlValue')
+def calculate_control():
+    controlValue = "0"
+    pValue = request.args.get('pValue')
+    iValue = request.args.get('iValue')
+    dValue = request.args.get('dValue')
+    setPoint = request.args.get('setPoint')
+    currentAverage = request.args.get('currentReading')
+
+    pid = PID(float(pValue), float(iValue), float(dValue), float(setPoint))
+
+    controlValue = pid(float(currentAverage))
+
+    return str(controlValue)
+
 @app.route('/chart-data', defaults={'average': None})
 @app.route('/chart-data/<average>')
 def chart_data(average):
@@ -60,7 +76,7 @@ def chart_data(average):
         return Response(ser.read_sensor_data(currentConfig, averageObservation=True), mimetype='text/event-stream')
 
 
-def getButtonList():
+def getConfigParams():
     """Reads the current selected particle sizes from ini and returns them as an array of class strings to apply
 
     Returns:
@@ -91,6 +107,13 @@ def getButtonList():
         button_list.append("btn particleButton clicked text-center btn-outline-primary")
 
     button_list.append(particle_settings)
+    button_list.append(currentConfig.get_setting('domain'))
+    button_list.append(currentConfig.get_setting('pValue'))
+    button_list.append(currentConfig.get_setting('iValue'))
+    button_list.append(currentConfig.get_setting('dValue'))
+    button_list.append(currentConfig.get_setting('controlInterval'))
+    button_list.append(currentConfig.get_setting('samplingInterval'))
+    button_list.append(currentConfig.get_setting('controlValue'))
 
     return button_list
 
