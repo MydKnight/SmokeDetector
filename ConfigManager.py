@@ -17,6 +17,7 @@ class ConfigManager:
                                  'SelectedSizes': '00000',
                                  'Domain': '',
                                  'DomainValue': '0',
+                                 'DomainMultiplier': '0',
                                  'SamplingInterval': '3',
                                  'ControlInterval': '180',
                                  'ControlValue': '1'}

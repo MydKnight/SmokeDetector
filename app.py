@@ -22,25 +22,14 @@ def store_params(updateSetting, updateValue):
    currentConfig.updateConfig(updateSetting, updateValue)
    return "Config Updated"
 
-@app.route('/fireFog/<state>/<sleepTime>', methods=['POST'])
-def fire_fog(state=None, sleepTime=0, flow=255):
-    
-    print("Sleep Time: " + sleepTime)
-    # If sleepTime = 0, Send start/stop until toggled
-    if sleepTime == '0':
-        if state == "start":
-            smokeControl.start_smoke()
-            return "Smoke Started"
-        else:
-            smokeControl.stop_smoke()
-            return "Smoke Stopped"
-    # Else, Send start, wait <time>seconds, then send stop
+@app.route('/fireFog/<state>/<flow>', methods=['POST'])
+def fire_fog(state=None, flow=255):
+    if state == "start":
+        smokeControl.start_smoke(flow)
+        return "Smoke Started"
     else:
-        if state == "start":
-            smokeControl.start_smoke()
-            time.sleep(int(sleepTime))
-            smokeControl.stop_smoke()
-            return "Smoke Cycle Complete"
+        smokeControl.stop_smoke()
+        return "Smoke Stopped"
 
 @app.route('/calculateControlValue')
 def calculate_control():
@@ -98,10 +87,6 @@ def getConfigParams():
     else:
         button_list.append("btn particleButton clicked text-center btn-outline-primary")
     if particle_settings[3] == 0:
-        button_list.append("btn particleButton text-center btn-outline-primary")
-    else:
-        button_list.append("btn particleButton clicked text-center btn-outline-primary")
-    if particle_settings[4] == 0:
         button_list.append("btn particleButton text-center btn-outline-primary")
     else:
         button_list.append("btn particleButton clicked text-center btn-outline-primary")

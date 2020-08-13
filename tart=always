@@ -1,0 +1,38 @@
+[0;1;32m●[0m smokefrontend.service - Smoke Frontend
+   Loaded: loaded (/etc/systemd/system/smokefrontend.service; disabled; vendor preset: enabled)
+   Active: [0;1;32mactive (running)[0m since Thu 2020-08-13 11:04:55 PDT; 4min 33s ago
+ Main PID: 2968 (python3)
+    Tasks: 5 (limit: 2068)
+   CGroup: /system.slice/smokefrontend.service
+           ├─2968 /usr/bin/python3 /home/pi/SmokeFrontend/app.py
+           └─3069 /usr/bin/python3 /home/pi/SmokeFrontend/app.py
+
+Aug 13 11:08:07 raspberrypi python3[2968]:  * Detected change in '/home/pi/SmokeFrontend/app.py', reloading
+Aug 13 11:08:07 raspberrypi python3[2968]: Ready
+Aug 13 11:08:07 raspberrypi python3[2968]: Updating Configs
+Aug 13 11:08:07 raspberrypi python3[2968]:  * Restarting with stat
+Aug 13 11:08:08 raspberrypi python3[2968]:  * Debugger is active!
+Aug 13 11:08:08 raspberrypi python3[2968]:  * Debugger PIN: 507-945-536
+Aug 13 11:08:50 raspberrypi python3[2968]: 192.168.147.193 - - [13/Aug/2020 11:08:50] "GET / HTTP/1.1" 200 -
+Aug 13 11:08:51 raspberrypi python3[2968]: 192.168.147.193 - - [13/Aug/2020 11:08:51] "GET /static/style.css HTTP/1.1" 200 -
+Aug 13 11:09:02 raspberrypi python3[2968]: 192.168.147.193 - - [13/Aug/2020 11:09:02] "GET /calibrate HTTP/1.1" 200 -
+Aug 13 11:09:09 raspberrypi python3[2968]: 192.168.147.193 - - [13/Aug/2020 11:09:09] "GET /favicon.ico HTTP/1.1" 404 -
+[0;1;32m●[0m smokefrontend.service - Smoke Frontend
+   Loaded: loaded (/etc/systemd/system/smokefrontend.service; disabled; vendor preset: enabled)
+   Active: [0;1;32mactive (running)[0m since Thu 2020-08-13 11:04:55 PDT; 4min 33s ago
+ Main PID: 2968 (python3)
+    Tasks: 5 (limit: 2068)
+   CGroup: /system.slice/smokefrontend.service
+           ├─2968 /usr/bin/python3 /home/pi/SmokeFrontend/app.py
+           └─3069 /usr/bin/python3 /home/pi/SmokeFrontend/app.py
+
+Aug 13 11:08:07 raspberrypi python3[2968]:  * Detected change in '/home/pi/SmokeFrontend/app.py', reloading
+Aug 13 11:08:07 raspberrypi python3[2968]: Ready
+Aug 13 11:08:07 raspberrypi python3[2968]: Updating Configs
+Aug 13 11:08:07 raspberrypi python3[2968]:  * Restarting with stat
+Aug 13 11:08:08 raspberrypi python3[2968]:  * Debugger is active!
+Aug 13 11:08:08 raspberrypi python3[2968]:  * Debugger PIN: 507-945-536
+Aug 13 11:08:50 raspberrypi python3[2968]: 192.168.147.193 - - [13/Aug/2020 11:08:50] "GET / HTTP/1.1" 200 -
+Aug 13 11:08:51 raspberrypi python3[2968]: 192.168.147.193 - - [13/Aug/2020 11:08:51] "GET /static/style.css HTTP/1.1" 200 -
+Aug 13 11:09:02 raspberrypi python3[2968]: 192.168.147.193 - - [13/Aug/2020 11:09:02] "GET /calibrate HTTP/1.1" 200 -
+Aug 13 11:09:09 raspberrypi python3[2968]: 192.168.147.193 - - [13/Aug/2020 11:09:09] "GET /favicon.ico HTTP/1.1" 404 -

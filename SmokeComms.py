@@ -12,12 +12,11 @@ class SmokeComms:
         self.dmx.blackout()
         self.dmx.render()
 
-    def start_smoke(self, timeInterval=0):
-        print("Setting Channel")
-        self.dmx.setChannel(1,255)
+    def start_smoke(self, intensity=255):
+        self.intensity = int(intensity)
+        self.dmx.setChannel(1,self.intensity)
         self.dmx.setChannel(2,255)
         self.dmx.render()
-        print("rendered channel")
 
     def stop_smoke(self):
         print("Blacking out smoke")

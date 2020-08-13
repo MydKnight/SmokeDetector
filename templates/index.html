@@ -72,7 +72,6 @@
     let obs2 = 0;
     let obs3 = 0;
     let obs4 = 0;
-    let obs5 = 0;
     let globalParticleValue = "{{ button_list[5] }}";
 
     // Handler for Particle Buttons
@@ -197,13 +196,6 @@
             data: {
                 labels: [],
                 datasets: [{
-                    label: "0.5 microns",
-                    backgroundColor: 'rgb(255, 89, 94)',
-                    borderColor: 'rgb(255, 89, 94)',
-                    data: [],
-                    fill: false,
-                },
-                {
                     label: "1 microns",
                     backgroundColor: 'rgb(255, 202, 58)',
                     borderColor: 'rgb(255, 202, 58)',
@@ -272,6 +264,7 @@
         const source = new EventSource("/chart-data");
 
         source.onmessage = function (event) {
+            console.log(event.data);
             const data = JSON.parse(event.data);
             if (config.data.labels.length === 20) {
                 config.data.labels.shift();
@@ -279,27 +272,24 @@
                 config.data.datasets[1].data.shift();
                 config.data.datasets[2].data.shift();
                 config.data.datasets[3].data.shift();
-                config.data.datasets[4].data.shift();
             }
             config.data.labels.push(data.time);
             config.data.datasets[0].data.push(data.obs1);
             config.data.datasets[1].data.push(data.obs2);
             config.data.datasets[2].data.push(data.obs3);
             config.data.datasets[3].data.push(data.obs4);
-            config.data.datasets[4].data.push(data.obs5);
+
             lineChart.update();
 
             // Update the Buttons with the current values, and store to a JS Variable for reading
-            document.querySelector('#pointFiveButton').innerHTML = data.obs1;
+            document.querySelector('#oneButton').innerHTML = data.obs1;
             obs1 = data.obs1;
-            document.querySelector('#oneButton').innerHTML = data.obs2;
+            document.querySelector('#twoPointFiveButton').innerHTML = data.obs2;
             obs2 = data.obs2;
-            document.querySelector('#twoPointFiveButton').innerHTML = data.obs3;
+            document.querySelector('#fourButton').innerHTML = data.obs3;
             obs3 = data.obs3;
-            document.querySelector('#fourButton').innerHTML = data.obs4;
+            document.querySelector('#tenButton').innerHTML = data.obs4;
             obs4 = data.obs4;
-            document.querySelector('#tenButton').innerHTML = data.obs5;
-            obs5 = data.obs5;
         }
     });
 </script>

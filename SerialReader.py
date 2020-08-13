@@ -1,12 +1,11 @@
 import serial, datetime, time, json
 
 class SerialReader:
-    def __init__(self, csvLog, usbPort='/dev/ttyUSB0', speed=115200, timeout=1):
+    def __init__(self, csvLog, usbPort='/dev/ttyUSB0', speed=115200):
         self.usbPort = usbPort
         self.speed = speed
-        self.timeout = timeout
         self.csvLog = csvLog
-        self.ser = serial.Serial(self.usbPort, self.speed, timeout=self.timeout)
+        self.ser = serial.Serial(self.usbPort, self.speed)
 
     def __del__(self):
         self.ser.close()
@@ -30,11 +29,10 @@ class SerialReader:
                 json_data = json.dumps(
                     {
                         'time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 
-                        'obs1': float(observations[4]),
-                        'obs2': float(observations[5]),
-                        'obs3': float(observations[6]),
-                        'obs4': float(observations[7]),
-                        'obs5': float(observations[8])})
+                        'obs1': float(observations[0]),
+                        'obs2': float(observations[1]),
+                        'obs3': float(observations[2]),
+                        'obs4': float(observations[3])})
                 yield f"data:{json_data}\n\n"
             # Else, return the set point and the average of selected values
             else:
@@ -44,19 +42,16 @@ class SerialReader:
                 particle_sum = 0
                 particle_count = 0
                 if particle_settings[0] == 1:
-                    particle_sum += float(observations[4])
+                    particle_sum += float(observations[0])
                     particle_count += 1
                 if particle_settings[1] == 1:
-                    particle_sum += float(observations[5])
+                    particle_sum += float(observations[1])
                     particle_count += 1
                 if particle_settings[2] == 1:
-                    particle_sum += float(observations[6])
+                    particle_sum += float(observations[2])
                     particle_count += 1
                 if particle_settings[3] == 1:
-                    particle_sum += float(observations[7])
-                    particle_count += 1
-                if particle_settings[4] == 1:
-                    particle_sum += float(observations[8])
+                    particle_sum += float(observations[3])
                     particle_count += 1
                 
                 # Get the Set Point

@@ -63,19 +63,23 @@
             $("input[name=domain][value=flowDomain]").prop('checked', true);
             document.getElementById("timeValue").disabled = false;
             document.getElementById("flowValue").disabled = true;
+            document.getElementById('flowMultipleValue').disabled = false;
+            document.getElementById('timeMultipleValue').disabled = true;
             document.getElementById("timeValue").value = "{{ button_list[12] }}";
         }
         if ("{{ button_list[6] }}" == "timeDomain"){
             $("input[name=domain][value=timeDomain]").prop('checked', true);
             document.getElementById("flowValue").disabled = false;
             document.getElementById("timeValue").disabled = true;
+            document.getElementById('flowMultipleValue').disabled = true;
+            document.getElementById('timeMultipleValue').disabled = false;
             document.getElementById("flowValue").value = "{{ button_list[12] }}";
         }
         document.getElementById("pValue").value = "{{ button_list[7] }}";
         document.getElementById("iValue").value = "{{ button_list[8] }}";
         document.getElementById("dValue").value = "{{ button_list[9] }}";
-        document.getElementById("sampleIntervalValue").value = "{{ button_list[10] }}";
-        document.getElementById("controlIntervalValue").value = "{{ button_list[11] }}";
+        document.getElementById("sampleIntervalValue").value = "{{ button_list[11] }}";
+        document.getElementById("controlIntervalValue").value = "{{ button_list[10] }}";
 
     })
 
@@ -175,10 +179,14 @@
             if (this.value == 'flowDomain'){
                 document.getElementById("timeValue").disabled = false;
                 document.getElementById("flowValue").disabled = true;
+                document.getElementById('flowMultipleValue').disabled = false;
+                document.getElementById('timeMultipleValue').disabled = true;
             }
             else{
                 document.getElementById("flowValue").disabled = false;
                 document.getElementById("timeValue").disabled = true;
+                document.getElementById('flowMultipleValue').disabled = true;
+                document.getElementById('timeMultipleValue').disabled = false;
             }
         }) 
     })
@@ -205,8 +213,12 @@
 
         if ($("input[name='domain']:checked").val() == 'flowDomain'){
             pidValues.domainConstant = $('#timeValue').val();
+            pidValues.domain = 'flowDomain';
+            pidValues.domainMultiplier = $('#flowMultipleValue').val();
         }else{
             pidValues.domainConstant = $('#flowValue').val();
+            pidValues.domain = 'timeDomain';
+            pidValues.domainMultiplier = $('#timeMultipleValue').val();
         }
         
         let validation = true;
@@ -228,6 +240,7 @@
             writeValueToIni("controlinterval", Number(pidValues.controlInterval));
             writeValueToIni("controlvalue", String(pidValues.domainConstant));
             writeValueToIni("samplinginterval", Number(pidValues.sampleInterval)); 
+            writeValueToIni("domainmultiplier", Number(pidValues.domainMultiplier)); 
 
             // begin calling run getting control value every controlInterval seconds - until abort happens
             let controlData = {
@@ -243,20 +256,20 @@
 
     function generateControlValue(pidValues, controlData){
         currentDate = new Date();
+        console.log(((currentDate.getTime() - controlData.lastRun.getTime())/1000));
         if (((currentDate.getTime() - controlData.lastRun.getTime())/1000) >= pidValues.controlInterval ){
             $.ajax({
                 type: 'GET',
                 url: '/calculateControlValue?pValue=' + pidValues.pValue + '&iValue=' + pidValues.iValue + '&dValue=' + pidValues.dValue + '&setPoint=' + pidValues.setPoint + '&currentReading=' + pidValues.currentAverage,
                 success: function(data){
                     controlData.controlValue = data;
-                    handleControl(data);
+                    handleControl(data, pidValues);
                 },
                 error: function(XMLHttpRequest, textStatus, errorThrown) { 
                     console.log("Status: " + textStatus); 
                     console.log("Error: " + errorThrown); 
                 }
             });
-
             
             controlData.lastRun = currentDate;
             return controlData;
@@ -264,14 +277,95 @@
         return controlData; 
     }
 
-    function handleControl(data, textStatus, jqXHR){
+    function handleControl(data, pidValues, textStatus, jqXHR){
         // Log the return value
-        
-        // if flowdomain then output * flow multiplier (number to a channel) for time seconds (time to keep the fogger on)
-        // if timedomain then output * time multiplier (number of seconds to fire) at flow level (number between 1 and 255)
+        console.log(data);
+
+        if (pidValues.domain == 'flowDomain'){
+            // if flowdomain then output * flow multiplier (number to a channel) for time seconds (time to keep the fogger on)
+            //Sleep time between 0 secs and 30 seconds (30000 ms)
+            sleepTime = pidValues.domainConstant * 1000;
+            if (sleepTime < 0){
+                sleepTime == 0;
+            }
+            if (sleepTime > 30000){
+                sleepTime == 30000;
+            }
+
+            // Flow level between 0 and 255
+            flowLevel = data *pidValues.domainMultiplier;
+            if (flowLevel < 0){
+                flowLevel == 0;
+            }
+            if (flowLevel > 255){
+                flowLevel == 255;
+            }
+
+            console.log("Fire Fogger at: " + flowLevel);
+            console.log("Sleeping for: " + sleepTime);
+            operateFogger('start', pidValues.domainMultiplier)
+            setTimeout(() => {  operateFogger('stop', pidValues.domainMultiplier); }, sleepTime);
+        }
+        if (pidValues.domain == 'timeDomain'){
+            // if timedomain then output * time multiplier (number of seconds to fire) at flow level (number between 1 and 255)
+            sleepTime = data * pidValues.domainMultiplier * 1000
+            flowLevel = pidValues.domainConstant
+            //Sleep time between 0 secs and 30 seconds (30000 ms)
+            sleepTime = pidValues.domainConstant * 1000;
+            if (sleepTime < 0){
+                sleepTime == 0;
+            }
+            if (sleepTime > 30000){
+                sleepTime == 30000;
+            }
+
+            // Flow level between 0 and 255
+            flowLevel = data *pidValues.domainMultiplier;
+            if (flowLevel < 0){
+                flowLevel == 0;
+            }
+            if (flowLevel > 255){
+                flowLevel == 255;
+            }
+
+            console.log("Fire Fogger at: " + flowLevel);
+            console.log("Sleeping for: " + sleepTime);
+            operateFogger('start', pidValues.domainMultiplier)
+            setTimeout(() => {  operateFogger('stop', pidValues.domainMultiplier); }, sleepTime);
+        }
         console.log(data);
     }
 
+    function operateFogger(startStop, level){
+        if (startStop == "start"){
+            $.ajax({
+                type: 'POST',
+                url: '/fireFog/start/' + level,
+                success: function(data){
+                    console.log(data);
+                    document.getElementById('fogButton').className.replace('btn-outline-secondary', 'btn-secondary');
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                    console.log("Status: " + textStatus); 
+                    console.log("Error: " + errorThrown); 
+                }
+            });
+        }
+        else{
+            $.ajax({
+                type: 'POST',
+                url: '/fireFog/stop/0',
+                success: function(data){
+                    console.log(data);
+                    document.getElementById('fogButton').className.replace('btn-secondary', 'btn-outline-secondary');
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                    console.log("Status: " + textStatus); 
+                    console.log("Error: " + errorThrown); 
+                }
+            });
+        }
+    }
 
     function writeValueToIni(settingKey, settingValue){
         $.ajax({

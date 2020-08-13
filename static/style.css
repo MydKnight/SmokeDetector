@@ -2,6 +2,14 @@
     width: 50px;
 }
 
+/* Style for Time/FlowDomain elements */
+#flowMultipleValue, #timeMultipleValue{
+    display: inline-block;
+    width: 4em;
+    margin-left: .5em;
+    margin-bottom: .5em;
+}
+
 /* Button Styles for the overlay buttons */
 #pointFiveButton{
     color: rgb(255, 89, 94);
