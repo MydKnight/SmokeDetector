@@ -15,27 +15,12 @@
     </div>
 
     <div class="row">
-        <div class='col-3 offset-3'>
-            <div class="input-group mb-3">
-                <div class="input-group-prepend">
-                    <span class="input-group-text" id="basic-addon1">Temperature</span>
-                </div>
-                <input type="text" class="form-control" placeholder="72" aria-label="Temperature" aria-describedby="basic-addon1">
-            </div>
-        </div>
-        <div class='col-3'>
-            <div class="input-group mb-3">
-                <div class="input-group-prepend">
-                    <span class="input-group-text" id="basic-addon1">Moisture</span>
-                </div>
-                <input type="text" class="form-control" placeholder="72" aria-label="Moisture" aria-describedby="basic-addon1">
-            </div>
-        </div>
+        {% include 'topNav.html' %}
     </div>
     
     <div class="row">
         <div class="col-3">
-            
+            {% include 'setupLeftNav.html' %}
         </div>
         <div class="col-9">
             <div class="card">
@@ -65,14 +50,33 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
 <!--suppress JSUnresolvedLibraryURL -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
-<!--suppress JSUnresolvedLibraryURL -->
+<!--suppress JSUnresolvedLibraryURL --> 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
 <script>
     let obs1 = 0;
     let obs2 = 0;
     let obs3 = 0;
     let obs4 = 0;
-    let globalParticleValue = "{{ button_list[5] }}";
+    let globalParticleValue = "{{ button_list[4] }}";
+
+    // Handler for initial page load to get the input elements for the page
+    $(function (){
+        console.log("executing on load event");j
+        document.getElementById("pumpChannelValue").value = "{{ button_list[12] }}";
+        document.getElementById("fanChannelValue").value = "{{ button_list[13] }}";
+        document.getElementById("fanSpeedValue").value = "{{ button_list[14] }}";
+
+        // And to setup listener for temp data
+        const temps = new EventSource("/get-temp-data/{{ button_list[10] }}");
+        temps.onmessage = function (event) {
+            console.log(event);
+            // Update the data onscreen
+            const tempData = JSON.parse(event.data);
+            document.getElementById("temperatureValue").value = tempData.temperature;
+            document.getElementById("moistureValue").value = tempData.humidity;
+            // Write these values to....ini? csv?
+        }
+    })
 
     // Handler for Particle Buttons
     document.querySelectorAll('.particleButton').forEach(item => {
@@ -111,6 +115,11 @@
 
     // Handler for Fog Button
     document.querySelector('#fogButton').addEventListener('click', function(e){
+        // Write Current Channel/Fogger Level Values to INI
+        writeValueToIni("pumpChannel", Number(document.getElementById("pumpChannelValue").value)); 
+        writeValueToIni("fanChannel", Number(document.getElementById("fanChannelValue").value)); 
+        writeValueToIni("fanSpeed", Number(document.getElementById("fanSpeedValue").value)); 
+
         // If button clicked (btn-secondary) stop firing fog, toggle class
         if (e.target.className.indexOf('btn-outline-secondary') === -1){
             $.ajax({
@@ -147,6 +156,11 @@
     
     // Handler for Calibrate button
     document.querySelector('#calibrateButton').addEventListener('click', function(e){
+        // Write Current Channel/Fogger Level Values to INI
+        writeValueToIni("pumpChannel", Number(document.getElementById("pumpChannelValue").value)); 
+        writeValueToIni("fanChannel", Number(document.getElementById("fanChannelValue").value)); 
+        writeValueToIni("fanSpeed", Number(document.getElementById("fanSpeedValue").value)); 
+
         let setPoint = 0;
 
         // Calculate the average of selected Particles
@@ -175,6 +189,12 @@
             sumCount ++;
         }
         setPoint = sumParticles/sumCount;
+        console.log ("Global Particle Settings: " + toString(globalParticleValue));
+        console.log ("Calculated Set Point: " + toString(setPoint));
+        if (setPoint == NaN){
+            alert ("Unable to Calculate SetPoint. Cannot move to calibrate");
+            return;
+        }
 
         $.ajax({
                 type: 'POST',
@@ -188,6 +208,20 @@
                 }
             });
     });
+
+    function writeValueToIni(settingKey, settingValue){
+        $.ajax({
+                type: 'POST',
+                url: '/storeParams/' + settingKey + '/' + settingValue,
+                success: function(data){
+                    console.log(data);
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) { 
+                    console.log("Status: " + textStatus); 
+                    console.log("Error: " + errorThrown); 
+                }
+            });
+    }
 
     // Set up the JS Chart functionality
     $(document).ready(function () {
@@ -264,7 +298,6 @@
         const source = new EventSource("/chart-data");
 
         source.onmessage = function (event) {
-            console.log(event.data);
             const data = JSON.parse(event.data);
             if (config.data.labels.length === 20) {
                 config.data.labels.shift();

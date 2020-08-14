@@ -59,7 +59,7 @@
 
     // Handler for initial page load to get the input elements for the page
     $(function (){
-        if ("{{ button_list[6] }}" == "flowDomain"){
+        if ("{{ button_list[5] }}" == "flowDomain"){
             $("input[name=domain][value=flowDomain]").prop('checked', true);
             document.getElementById("timeValue").disabled = false;
             document.getElementById("flowValue").disabled = true;
@@ -67,7 +67,7 @@
             document.getElementById('timeMultipleValue').disabled = true;
             document.getElementById("timeValue").value = "{{ button_list[12] }}";
         }
-        if ("{{ button_list[6] }}" == "timeDomain"){
+        if ("{{ button_list[5] }}" == "timeDomain"){
             $("input[name=domain][value=timeDomain]").prop('checked', true);
             document.getElementById("flowValue").disabled = false;
             document.getElementById("timeValue").disabled = true;
@@ -75,12 +75,22 @@
             document.getElementById('timeMultipleValue').disabled = false;
             document.getElementById("flowValue").value = "{{ button_list[12] }}";
         }
-        document.getElementById("pValue").value = "{{ button_list[7] }}";
-        document.getElementById("iValue").value = "{{ button_list[8] }}";
-        document.getElementById("dValue").value = "{{ button_list[9] }}";
-        document.getElementById("sampleIntervalValue").value = "{{ button_list[11] }}";
-        document.getElementById("controlIntervalValue").value = "{{ button_list[10] }}";
+        document.getElementById("pValue").value = "{{ button_list[6] }}";
+        document.getElementById("iValue").value = "{{ button_list[7] }}";
+        document.getElementById("dValue").value = "{{ button_list[8] }}";
+        document.getElementById("sampleIntervalValue").value = "{{ button_list[10] }}";
+        document.getElementById("controlIntervalValue").value = "{{ button_list[9] }}";
 
+        // And to setup listener for temp data
+        const temps = new EventSource("/get-temp-data/{{ button_list[10] }}");
+        temps.onmessage = function (event) {
+            console.log(event);
+            // Update the data onscreen
+            const tempData = JSON.parse(event.data);
+            document.getElementById("temperatureValue").value = tempData.temperature;
+            document.getElementById("moistureValue").value = tempData.humidity;
+            // Write these values to....ini? csv?
+        }
     })
 
     // Set up the JS Chart functionality
@@ -209,7 +219,6 @@
             this.classList.add('btn-danger');
             this.classList.remove('btn-outline-danger');
         }
-        console.log(this.classList);
 
         if ($("input[name='domain']:checked").val() == 'flowDomain'){
             pidValues.domainConstant = $('#timeValue').val();
@@ -238,7 +247,7 @@
             writeValueToIni("ivalue", Number(pidValues.iValue));
             writeValueToIni("dvalue", Number(pidValues.dValue));
             writeValueToIni("controlinterval", Number(pidValues.controlInterval));
-            writeValueToIni("controlvalue", String(pidValues.domainConstant));
+            writeValueToIni("domainvalue", String(pidValues.domainConstant));
             writeValueToIni("samplinginterval", Number(pidValues.sampleInterval)); 
             writeValueToIni("domainmultiplier", Number(pidValues.domainMultiplier)); 
 
@@ -256,7 +265,7 @@
 
     function generateControlValue(pidValues, controlData){
         currentDate = new Date();
-        console.log(((currentDate.getTime() - controlData.lastRun.getTime())/1000));
+        // console.log(((currentDate.getTime() - controlData.lastRun.getTime())/1000));
         if (((currentDate.getTime() - controlData.lastRun.getTime())/1000) >= pidValues.controlInterval ){
             $.ajax({
                 type: 'GET',
@@ -278,27 +287,28 @@
     }
 
     function handleControl(data, pidValues, textStatus, jqXHR){
-        // Log the return value
-        console.log(data);
+        // Update the Control Value onscreen and in INI
+        document.getElementById("controlValue").value = data;
+        writeValueToIni("controlValue", Number(data)); 
 
         if (pidValues.domain == 'flowDomain'){
             // if flowdomain then output * flow multiplier (number to a channel) for time seconds (time to keep the fogger on)
             //Sleep time between 0 secs and 30 seconds (30000 ms)
             sleepTime = pidValues.domainConstant * 1000;
             if (sleepTime < 0){
-                sleepTime == 0;
+                sleepTime = 0;
             }
             if (sleepTime > 30000){
-                sleepTime == 30000;
+                sleepTime = 30000;
             }
 
             // Flow level between 0 and 255
             flowLevel = data *pidValues.domainMultiplier;
             if (flowLevel < 0){
-                flowLevel == 0;
+                flowLevel = 0;
             }
             if (flowLevel > 255){
-                flowLevel == 255;
+                flowLevel = 255;
             }
 
             console.log("Fire Fogger at: " + flowLevel);

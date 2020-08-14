@@ -1,7 +1,16 @@
 import serial, datetime, time, json
+from serial.tools.list_ports import comports
 
 class SerialReader:
     def __init__(self, csvLog, usbPort='/dev/ttyUSB0', speed=115200):
+        # Find the usb port that the Serial reader is on.
+        if comports:
+            com_ports_list = list(comports())
+            for port in com_ports_list:        
+                if ("CP2102" in str(port)):
+                    portString =str(port)
+                    usbPort = portString[0:12]
+                        
         self.usbPort = usbPort
         self.speed = speed
         self.csvLog = csvLog

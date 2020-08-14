@@ -20,7 +20,10 @@ class ConfigManager:
                                  'DomainMultiplier': '0',
                                  'SamplingInterval': '3',
                                  'ControlInterval': '180',
-                                 'ControlValue': '1'}
+                                 'ControlValue': '1',
+                                 'PumpChannel': '1',
+                                 'FanChannel': '2',
+                                 'FanSpeed': '255'}
             with open(self.filename, 'w') as configfile:
                 self.config_settings.write(configfile)
 

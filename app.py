@@ -1,4 +1,4 @@
-import json, serial, random, SerialReader, CSVWriter, ConfigManager, SmokeComms, time, sys
+import json, serial, random, SerialReader, CSVWriter, ConfigManager, SmokeComms, time, sys, bme280
 from flask import Flask, Response, render_template, session, request
 from simple_pid import PID
 
@@ -25,7 +25,7 @@ def store_params(updateSetting, updateValue):
 @app.route('/fireFog/<state>/<flow>', methods=['POST'])
 def fire_fog(state=None, flow=255):
     if state == "start":
-        smokeControl.start_smoke(flow)
+        smokeControl.start_smoke(currentConfig.get_setting('fanChannel'), currentConfig.get_setting('pumpChannel'), flow, currentConfig.get_setting('fanSpeed'))
         return "Smoke Started"
     else:
         smokeControl.stop_smoke()
@@ -45,6 +45,20 @@ def calculate_control():
     controlValue = pid(float(currentAverage))
 
     return str(controlValue)
+
+@app.route('/get-temp-data/<pollingInterval>')
+def get_temp_data(pollingInterval):
+    def temp_stream(pollingInterval):
+        temperature,pressure,humidity = bme280.readBME280All()
+        json_data = json.dumps(
+            {
+                'temperature': str(temperature), 
+                'pressure': str(pressure),
+                'humidity': str(humidity)})
+        yield f"data:{json_data}\n\n"
+        
+    return Response(temp_stream(pollingInterval), mimetype='text/event-stream')
+
 
 @app.route('/chart-data', defaults={'average': None})
 @app.route('/chart-data/<average>')
@@ -69,7 +83,21 @@ def getConfigParams():
     """Reads the current selected particle sizes from ini and returns them as an array of class strings to apply
 
     Returns:
-        array: list of classes to apply to the buttons
+        array:  0 = 1 micron class, 
+                1 = 2.5 micron class
+                2 = 4 micron class
+                3 = 10 micron class
+                4 = Selected Particle Values
+                5 = Domain
+                6 = pValue
+                7 = iValue
+                8 = dValue
+                9 = controlInterval
+                10 = sampleInterval
+                11 = controlValue
+                12 = pumpChannel
+                13 = fanChannel
+                14 = fanSpeed
     """
     button_list = []
     particle_config = currentConfig.get_setting("selectedsizes")
@@ -99,7 +127,11 @@ def getConfigParams():
     button_list.append(currentConfig.get_setting('controlInterval'))
     button_list.append(currentConfig.get_setting('samplingInterval'))
     button_list.append(currentConfig.get_setting('controlValue'))
+    button_list.append(currentConfig.get_setting('pumpChannel'))
+    button_list.append(currentConfig.get_setting('fanChannel'))
+    button_list.append(currentConfig.get_setting('fanSpeed'))
 
+    print (button_list)
     return button_list
 
 if __name__ == '__main__':
