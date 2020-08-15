@@ -10,10 +10,9 @@
 </head>
 <body>
 <div class="container">
-    <div class="row">
-        <h1 class='col-6 offset-3'>Fog Machine Setup</h1>
+    <div class="row page-header">
+        <h1>Fog Setup</h1>
     </div>
-
     <div class="row">
         {% include 'topNav.html' %}
     </div>
@@ -33,7 +32,6 @@
     <hr />
     {% include 'observations.html' %}
     <div class="row navigations">
-        <p>These Buttons should not be available unless at least one particle type is checked.</p>
         <div class='col-3 offset-3'>
             <a href="/calibrate" type="button" id="calibrateButton" class="btn btn-warning">Calibrate</a>
         </div>
@@ -61,7 +59,6 @@
 
     // Handler for initial page load to get the input elements for the page
     $(function (){
-        console.log("executing on load event");j
         document.getElementById("pumpChannelValue").value = "{{ button_list[12] }}";
         document.getElementById("fanChannelValue").value = "{{ button_list[13] }}";
         document.getElementById("fanSpeedValue").value = "{{ button_list[14] }}";
@@ -69,11 +66,10 @@
         // And to setup listener for temp data
         const temps = new EventSource("/get-temp-data/{{ button_list[10] }}");
         temps.onmessage = function (event) {
-            console.log(event);
             // Update the data onscreen
             const tempData = JSON.parse(event.data);
-            document.getElementById("temperatureValue").value = tempData.temperature;
-            document.getElementById("moistureValue").value = tempData.humidity;
+            document.getElementById("temperatureValue").value = Math.floor(tempData.temperature);
+            document.getElementById("moistureValue").value = Math.floor(tempData.humidity);
             // Write these values to....ini? csv?
         }
     })
@@ -99,26 +95,14 @@
             })
             globalParticleValue = particleValue;
             
-            $.ajax({
-                type: 'POST',
-                url: '/storeParams/selectedsizes/'+particleValue,
-                success: function(data){
-                    console.log(data);
-                },
-                error: function(XMLHttpRequest, textStatus, errorThrown) { 
-                    console.log("Status: " + textStatus); 
-                    console.log("Error: " + errorThrown); 
-                }
-            });
+            writeValueToIni({"selectedsizes": particleValue}); 
         })
     });
 
     // Handler for Fog Button
     document.querySelector('#fogButton').addEventListener('click', function(e){
         // Write Current Channel/Fogger Level Values to INI
-        writeValueToIni("pumpChannel", Number(document.getElementById("pumpChannelValue").value)); 
-        writeValueToIni("fanChannel", Number(document.getElementById("fanChannelValue").value)); 
-        writeValueToIni("fanSpeed", Number(document.getElementById("fanSpeedValue").value)); 
+        writeValueToIni({"pumpChannel": Number(document.getElementById("pumpChannelValue").value), "fanChannel": Number(document.getElementById("fanChannelValue").value), "fanSpeed": Number(document.getElementById("fanSpeedValue").value)}); 
 
         // If button clicked (btn-secondary) stop firing fog, toggle class
         if (e.target.className.indexOf('btn-outline-secondary') === -1){
@@ -139,7 +123,7 @@
         else{
             $.ajax({
                 type: 'POST',
-                url: '/fireFog/start/0',
+                url: '/fireFog/start/255',
                 success: function(data){
                     console.log(data);
                     e.target.className = e.target.className.replace('btn-outline-secondary', 'btn-secondary');
@@ -157,9 +141,7 @@
     // Handler for Calibrate button
     document.querySelector('#calibrateButton').addEventListener('click', function(e){
         // Write Current Channel/Fogger Level Values to INI
-        writeValueToIni("pumpChannel", Number(document.getElementById("pumpChannelValue").value)); 
-        writeValueToIni("fanChannel", Number(document.getElementById("fanChannelValue").value)); 
-        writeValueToIni("fanSpeed", Number(document.getElementById("fanSpeedValue").value)); 
+        writeValueToIni({"pumpChannel": Number(document.getElementById("pumpChannelValue").value),"fanChannel": Number(document.getElementById("fanChannelValue").value), "fanSpeed": Number(document.getElementById("fanSpeedValue").value)}); 
 
         let setPoint = 0;
 
@@ -169,50 +151,44 @@
         let digits = globalParticleValue.toString().split('');
         let realDigits = digits.map(Number)
         if (realDigits[0] == 1){
+            console.log("particle one value: " + toString(realDigits[0]));
             sumParticles += obs1;
             sumCount ++;
         }
         if (realDigits[1] == 1){
+            console.log("particle two value: " + toString(realDigits[1]));
             sumParticles += obs2;
             sumCount ++;
         }
         if (realDigits[2] == 1){
+            console.log("particle three value: " + toString(realDigits[2]));
             sumParticles += obs3;
             sumCount ++;
         }
         if (realDigits[3] == 1){
+            console.log("particle four value: " + toString(realDigits[3]));
             sumParticles += obs4;
             sumCount ++;
         }
-        if (realDigits[4] == 1){
-            sumParticles += obs5;
-            sumCount ++;
-        }
+
         setPoint = sumParticles/sumCount;
-        console.log ("Global Particle Settings: " + toString(globalParticleValue));
-        console.log ("Calculated Set Point: " + toString(setPoint));
-        if (setPoint == NaN){
+        console.log("Sum: " + sumParticles.toString());
+        console.log("Number: " + sumCount.toString());
+        console.log ("Calculated Set Point: " + setPoint.toString());
+        if (setPoint == NaN || setPoint == 'NaN'){
             alert ("Unable to Calculate SetPoint. Cannot move to calibrate");
             return;
         }
 
-        $.ajax({
-                type: 'POST',
-                url: '/storeParams/setpoint/'+setPoint,
-                success: function(data){
-                    console.log(data);
-                },
-                error: function(XMLHttpRequest, textStatus, errorThrown) { 
-                    console.log("Status: " + textStatus); 
-                    console.log("Error: " + errorThrown); 
-                }
-            });
+        writeValueToIni({"setpoint": setPoint}); 
+
     });
 
-    function writeValueToIni(settingKey, settingValue){
+    function writeValueToIni(settingArray){
+        const jsonString = JSON.stringify(settingArray)
         $.ajax({
                 type: 'POST',
-                url: '/storeParams/' + settingKey + '/' + settingValue,
+                url: '/storeParams/' + jsonString,
                 success: function(data){
                     console.log(data);
                 },
@@ -282,6 +258,9 @@
                     }],
                     yAxes: [{
                         display: true,
+                        ticks : {
+                            beginAtZero : true
+                        },
                         scaleLabel: {
                             display: true,
                             labelString: 'Value'

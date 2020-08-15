@@ -10,8 +10,8 @@
 </head>
 <body>
 <div class="container">
-    <div class="row">
-        <h1 class='col-6 offset-3'>Fog Machine Calibrate</h1>
+    <div class="row page-header">
+        <h1>Fog Calibration</h1>
     </div>
     <div class="row">
         {% include 'topNav.html' %}
@@ -31,7 +31,7 @@
     <hr />
     
     <div class="row navigations">
-        <div class='col-2 offset-3'>
+        <div class='col-2 offset-2'>
             <button" type="button" id="startButton" class="btn btn-outline-danger">Run</button>
         </div>
         <div class='col-2'>
@@ -41,7 +41,15 @@
             <button type="button" id="operationButton" class="btn btn-success">Operation</button>
         </div>
         <div class='col-2'>
-            <button type="button" id="fogButton" class="btn btn-outline-secondary">Fog</button>
+            <button type="button" id="fogButton" class="btn btn-outline-secondary" >Fog</button>
+        </div>
+        <div class='col-2'>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">Flow</span>
+                </div>
+                <input type="text" class="form-control" id="currentFlowValue" disabled="disabled" aria-label="Flow Channel Value">    
+            </div>
         </div>
     </div>
 </div>
@@ -63,17 +71,19 @@
             $("input[name=domain][value=flowDomain]").prop('checked', true);
             document.getElementById("timeValue").disabled = false;
             document.getElementById("flowValue").disabled = true;
+            document.getElementById("timeValue").value = "{{ button_list[15] }}";
             document.getElementById('flowMultipleValue').disabled = false;
             document.getElementById('timeMultipleValue').disabled = true;
-            document.getElementById("timeValue").value = "{{ button_list[12] }}";
+            document.getElementById("flowMultipleValue").value = "{{ button_list[16] }}";
         }
         if ("{{ button_list[5] }}" == "timeDomain"){
             $("input[name=domain][value=timeDomain]").prop('checked', true);
             document.getElementById("flowValue").disabled = false;
             document.getElementById("timeValue").disabled = true;
+            document.getElementById("flowValue").value = "{{ button_list[15] }}";
             document.getElementById('flowMultipleValue').disabled = true;
             document.getElementById('timeMultipleValue').disabled = false;
-            document.getElementById("flowValue").value = "{{ button_list[12] }}";
+            document.getElementById("timeMultipleValue").value = "{{ button_list[16] }}";
         }
         document.getElementById("pValue").value = "{{ button_list[6] }}";
         document.getElementById("iValue").value = "{{ button_list[7] }}";
@@ -84,11 +94,10 @@
         // And to setup listener for temp data
         const temps = new EventSource("/get-temp-data/{{ button_list[10] }}");
         temps.onmessage = function (event) {
-            console.log(event);
             // Update the data onscreen
             const tempData = JSON.parse(event.data);
-            document.getElementById("temperatureValue").value = tempData.temperature;
-            document.getElementById("moistureValue").value = tempData.humidity;
+            document.getElementById("temperatureValue").value = Math.floor(tempData.temperature);
+            document.getElementById("moistureValue").value = Math.floor(tempData.humidity);
             // Write these values to....ini? csv?
         }
     })
@@ -139,6 +148,9 @@
                     }],
                     yAxes: [{
                         display: true,
+                        ticks : {
+                            beginAtZero : true
+                        },   
                         scaleLabel: {
                             display: true,
                             labelString: 'Value'
@@ -155,6 +167,7 @@
         const source = new EventSource("/chart-data/calibrate");
 
         source.onmessage = function (event) {
+            console.log(event.data);
             const data = JSON.parse(event.data);
             if (config.data.labels.length === 20) {
                 config.data.labels.shift();
@@ -175,17 +188,8 @@
     // Handler for Domain Radio Buttons
     $(function (){
         $('input[type=radio][name=domain]').change(function(e){
-            $.ajax({
-                    type: 'POST',
-                    url: '/storeParams/domain/'+this.value,
-                    success: function(data){
-                        console.log(data);
-                    },
-                    error: function(XMLHttpRequest, textStatus, errorThrown) { 
-                        console.log("Status: " + textStatus); 
-                        console.log("Error: " + errorThrown); 
-                    }
-                });
+            writeValueToIni({"domain": this.value}); 
+            
             if (this.value == 'flowDomain'){
                 document.getElementById("timeValue").disabled = false;
                 document.getElementById("flowValue").disabled = true;
@@ -243,13 +247,13 @@
         
         if (validation == true){
             // Write the values to the INI file (p, i, d, domainconstant, sample interval, control interval)
-            writeValueToIni("pvalue", Number(pidValues.pValue));
-            writeValueToIni("ivalue", Number(pidValues.iValue));
-            writeValueToIni("dvalue", Number(pidValues.dValue));
-            writeValueToIni("controlinterval", Number(pidValues.controlInterval));
-            writeValueToIni("domainvalue", String(pidValues.domainConstant));
-            writeValueToIni("samplinginterval", Number(pidValues.sampleInterval)); 
-            writeValueToIni("domainmultiplier", Number(pidValues.domainMultiplier)); 
+            writeValueToIni({"pvalue": Number(pidValues.pValue), 
+                "ivalue": Number(pidValues.iValue),
+                "dvalue": Number(pidValues.dValue),
+                "controlinterval": Number(pidValues.controlInterval),
+                "domainvalue": String(pidValues.domainConstant),
+                "samplinginterval": Number(pidValues.sampleInterval),
+                "domainmultiplier": Number(pidValues.domainMultiplier)});
 
             // begin calling run getting control value every controlInterval seconds - until abort happens
             let controlData = {
@@ -261,11 +265,9 @@
         }
     });
 
-    
-
     function generateControlValue(pidValues, controlData){
         currentDate = new Date();
-        // console.log(((currentDate.getTime() - controlData.lastRun.getTime())/1000));
+        console.log(((currentDate.getTime() - controlData.lastRun.getTime())/1000));
         if (((currentDate.getTime() - controlData.lastRun.getTime())/1000) >= pidValues.controlInterval ){
             $.ajax({
                 type: 'GET',
@@ -289,7 +291,7 @@
     function handleControl(data, pidValues, textStatus, jqXHR){
         // Update the Control Value onscreen and in INI
         document.getElementById("controlValue").value = data;
-        writeValueToIni("controlValue", Number(data)); 
+        writeValueToIni({"controlValue": Number(data)}); 
 
         if (pidValues.domain == 'flowDomain'){
             // if flowdomain then output * flow multiplier (number to a channel) for time seconds (time to keep the fogger on)
@@ -311,10 +313,16 @@
                 flowLevel = 255;
             }
 
+            document.getElementById("currentFlowValue").value = Math.floor(flowLevel);
             console.log("Fire Fogger at: " + flowLevel);
             console.log("Sleeping for: " + sleepTime);
-            operateFogger('start', pidValues.domainMultiplier)
-            setTimeout(() => {  operateFogger('stop', pidValues.domainMultiplier); }, sleepTime);
+            if (flowLevel > 0){
+                operateFogger('start', flowLevel)
+                setTimeout(() => {  operateFogger('stop', pidValues.domainMultiplier); }, sleepTime);
+            }else{
+                console.log("Flow Level Zero, not operatinf fogger");
+            }
+            
         }
         if (pidValues.domain == 'timeDomain'){
             // if timedomain then output * time multiplier (number of seconds to fire) at flow level (number between 1 and 255)
@@ -338,9 +346,10 @@
                 flowLevel == 255;
             }
 
+            document.getElementById("currentFlowValue").value = flowLevel;
             console.log("Fire Fogger at: " + flowLevel);
             console.log("Sleeping for: " + sleepTime);
-            operateFogger('start', pidValues.domainMultiplier)
+            operateFogger('start', flowLevel)
             setTimeout(() => {  operateFogger('stop', pidValues.domainMultiplier); }, sleepTime);
         }
         console.log(data);
@@ -353,7 +362,8 @@
                 url: '/fireFog/start/' + level,
                 success: function(data){
                     console.log(data);
-                    document.getElementById('fogButton').className.replace('btn-outline-secondary', 'btn-secondary');
+                    document.getElementById('fogButton').classList.add('btn-secondary');
+                    document.getElementById('fogButton').classList.remove('btn-outline-secondary');
                 },
                 error: function(XMLHttpRequest, textStatus, errorThrown) { 
                     console.log("Status: " + textStatus); 
@@ -367,7 +377,8 @@
                 url: '/fireFog/stop/0',
                 success: function(data){
                     console.log(data);
-                    document.getElementById('fogButton').className.replace('btn-secondary', 'btn-outline-secondary');
+                    document.getElementById('fogButton').classList.remove('btn-secondary');
+                    document.getElementById('fogButton').classList.add('btn-outline-secondary');
                 },
                 error: function(XMLHttpRequest, textStatus, errorThrown) { 
                     console.log("Status: " + textStatus); 
@@ -377,10 +388,11 @@
         }
     }
 
-    function writeValueToIni(settingKey, settingValue){
+    function writeValueToIni(settingArray){
+        const jsonString = JSON.stringify(settingArray)
         $.ajax({
                 type: 'POST',
-                url: '/storeParams/' + settingKey + '/' + settingValue,
+                url: '/storeParams/' + jsonString,
                 success: function(data){
                     console.log(data);
                 },

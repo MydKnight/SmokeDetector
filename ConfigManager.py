@@ -1,4 +1,4 @@
-import os, configparser, datetime, glob
+import os, configparser, datetime, glob, json
 
 class ConfigManager:
     """Provides functions for reading and updating the config file for a given run
@@ -38,18 +38,21 @@ class ConfigManager:
         # Write back to JSON file in the configs directory
         pass
 
-    def updateConfig(self, updateSetting, updateValue):
-        """Given a key/value pair, update the dataset with the new value
+    def updateConfig(self, updateArray):
+        """Given a JSON Array, update all values
 
         Args:
-            updateSetting ([string]): Key that the user wishes to update
-            updateValue ([int/string]): The value the user wishes to update
+            updateArray ([string]): JSON Array of Key/Value Pairs
+            
         """
         # Different parameters will be different datatypes. Verify that they are correct before updating
         self.config_settings.read(self.filename)
-        self.config_settings.set("DEFAULT", updateSetting, updateValue)
-        with open(self.filename, 'w') as configfile:
+        settings = json.loads(updateArray)
+        for key in settings.keys():
+            self.config_settings.set("DEFAULT", key, str(settings[key]))
+        with open(self.filename, 'w+') as configfile:
             self.config_settings.write(configfile)
+        return self.config_settings
 
     def get_setting(self, setting=None):
         """Gets a given setting value for a passed key

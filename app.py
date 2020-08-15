@@ -17,18 +17,21 @@ def calibrate():
     # Read the current Set Point, and Selected Obs and pass these as parameters to the template
     return render_template('calibrate.html', button_list = getConfigParams())
 
-@app.route('/storeParams/<updateSetting>/<updateValue>', methods=['POST'])
-def store_params(updateSetting, updateValue):
-   currentConfig.updateConfig(updateSetting, updateValue)
-   return "Config Updated"
+@app.route('/storeParams/<updateJSON>', methods=['POST', 'GET'])
+def store_params(updateJSON):
+   currentConfig.updateConfig(updateJSON)
+   return "Updated: "+ updateJSON
 
 @app.route('/fireFog/<state>/<flow>', methods=['POST'])
 def fire_fog(state=None, flow=255):
+    flow  = int(float(flow))
     if state == "start":
-        smokeControl.start_smoke(currentConfig.get_setting('fanChannel'), currentConfig.get_setting('pumpChannel'), flow, currentConfig.get_setting('fanSpeed'))
+        if flow <= 0:
+            return "No fog to send. Returning"
+        smokeControl.start_smoke(currentConfig.get_setting('fanChannel'), currentConfig.get_setting('pumpChannel'), flow)
         return "Smoke Started"
     else:
-        smokeControl.stop_smoke()
+        smokeControl.stop_smoke(currentConfig.get_setting('fanChannel'), currentConfig.get_setting('pumpChannel'),currentConfig.get_setting('fanSpeed'))
         return "Smoke Stopped"
 
 @app.route('/calculateControlValue')
@@ -98,6 +101,8 @@ def getConfigParams():
                 12 = pumpChannel
                 13 = fanChannel
                 14 = fanSpeed
+                15 = domainValue
+                16 = domainMultiplier
     """
     button_list = []
     particle_config = currentConfig.get_setting("selectedsizes")
@@ -119,7 +124,7 @@ def getConfigParams():
     else:
         button_list.append("btn particleButton clicked text-center btn-outline-primary")
 
-    button_list.append(particle_settings)
+    button_list.append(particle_config)
     button_list.append(currentConfig.get_setting('domain'))
     button_list.append(currentConfig.get_setting('pValue'))
     button_list.append(currentConfig.get_setting('iValue'))
@@ -130,6 +135,8 @@ def getConfigParams():
     button_list.append(currentConfig.get_setting('pumpChannel'))
     button_list.append(currentConfig.get_setting('fanChannel'))
     button_list.append(currentConfig.get_setting('fanSpeed'))
+    button_list.append(currentConfig.get_setting('domainValue'))
+    button_list.append(currentConfig.get_setting('domainMultiplier'))
 
     print (button_list)
     return button_list

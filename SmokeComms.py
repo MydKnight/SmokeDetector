@@ -30,7 +30,12 @@ class SmokeComms:
         self.dmx.setChannel(self.fanChannel, self.fanSpeed)
         self.dmx.render()
 
-    def stop_smoke(self):
+    def stop_smoke(self, fanChannel=2, pumpChannel=1, fanSpeed=0):
         print("Blacking out smoke")
-        self.dmx.blackout()
+        self.fanChannel = int(fanChannel)
+        self.pumpChannel = int(pumpChannel)
+        self.fanSpeed = int(fanSpeed)
+        print (self.fanSpeed)
+        self.dmx.setChannel(self.pumpChannel, 0)
+        self.dmx.setChannel(self.fanChannel, self.fanSpeed)
         self.dmx.render()
