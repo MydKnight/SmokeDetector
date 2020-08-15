@@ -2,6 +2,10 @@
     width: 50px;
 }
 
+#fogButton{
+    width: 100%
+}
+
 /* Style for Time/FlowDomain elements */
 #flowMultipleValue, #timeMultipleValue{
     display: inline-block;
