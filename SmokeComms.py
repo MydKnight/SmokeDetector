@@ -26,8 +26,6 @@ class SmokeComms:
         self.pumpChannel = int(pumpChannel)
         self.intensity = int(intensity)
         self.fanSpeed = int(fanSpeed)
-        if self.intensity <= 99:
-            self.intensity = 100
         self.dmx.setChannel(self.pumpChannel ,self.intensity)
         self.dmx.setChannel(self.fanChannel, self.fanSpeed)
         self.dmx.render()

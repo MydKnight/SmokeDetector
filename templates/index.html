@@ -142,46 +142,6 @@
     document.querySelector('#calibrateButton').addEventListener('click', function(e){
         // Write Current Channel/Fogger Level Values to INI
         writeValueToIni({"pumpChannel": Number(document.getElementById("pumpChannelValue").value),"fanChannel": Number(document.getElementById("fanChannelValue").value), "fanSpeed": Number(document.getElementById("fanSpeedValue").value)}); 
-
-        let setPoint = 0;
-
-        // Calculate the average of selected Particles
-        let sumParticles = 0;
-        let sumCount = 0;
-        let digits = globalParticleValue.toString().split('');
-        let realDigits = digits.map(Number)
-        if (realDigits[0] == 1){
-            console.log("particle one value: " + toString(realDigits[0]));
-            sumParticles += obs1;
-            sumCount ++;
-        }
-        if (realDigits[1] == 1){
-            console.log("particle two value: " + toString(realDigits[1]));
-            sumParticles += obs2;
-            sumCount ++;
-        }
-        if (realDigits[2] == 1){
-            console.log("particle three value: " + toString(realDigits[2]));
-            sumParticles += obs3;
-            sumCount ++;
-        }
-        if (realDigits[3] == 1){
-            console.log("particle four value: " + toString(realDigits[3]));
-            sumParticles += obs4;
-            sumCount ++;
-        }
-
-        setPoint = sumParticles/sumCount;
-        console.log("Sum: " + sumParticles.toString());
-        console.log("Number: " + sumCount.toString());
-        console.log ("Calculated Set Point: " + setPoint.toString());
-        if (setPoint == NaN || setPoint == 'NaN'){
-            alert ("Unable to Calculate SetPoint. Cannot move to calibrate");
-            return;
-        }
-
-        writeValueToIni({"setpoint": setPoint}); 
-
     });
 
     function writeValueToIni(settingArray){

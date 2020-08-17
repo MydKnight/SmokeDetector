@@ -31,7 +31,7 @@
     <hr />
     
     <div class="row navigations">
-        <div class='col-2 offset-2'>
+        <div class='col-2'>
             <button" type="button" id="startButton" class="btn btn-outline-danger">Run</button>
         </div>
         <div class='col-2'>
@@ -51,6 +51,14 @@
                 <input type="text" class="form-control" id="currentFlowValue" disabled="disabled" aria-label="Flow Channel Value">    
             </div>
         </div>
+        <div class='col-2'>
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">Timer</span>
+                </div>
+                <input type="text" class="form-control" id="calculationCountdown" disabled="disabled" aria-label="Calculation Countdown Value">    
+            </div>
+        </div>
     </div>
 </div>
 
@@ -64,6 +72,7 @@
     let pidValues = {};
     let abortControl = false;
     let getControl = 0;
+    let countdownTimer = 0;
 
     // Handler for initial page load to get the input elements for the page
     $(function (){
@@ -218,10 +227,17 @@
             clearInterval(getControl);
             this.classList.add('btn-outline-danger');
             this.classList.remove('btn-danger');
+            // Stop updating the countdown input and clear it.
+            clearInterval(countdownTimer);
+            document.getElementById("calculationCountdown").value = 0;
             return;
         }else{
             this.classList.add('btn-danger');
             this.classList.remove('btn-outline-danger');
+            // Set the Time we're counting down to
+            //let countdownTime = new Date().getTime() + pidValues.controlInterval
+            // Start updating the countdown input.
+            //countdownTimer = setInterval(calculateCountdownValue(countdownTime), 1000); 
         }
 
         if ($("input[name='domain']:checked").val() == 'flowDomain'){
@@ -265,9 +281,27 @@
         }
     });
 
+    function calculateCountdownValue(countdownTime){
+        // Get today's date and time
+        var now = new Date().getTime();
+        // Find the distance between now and the count down date
+        var distance = countdownTime - now;
+
+        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        // Update the Countdown
+        document.getElementById("calculationCountdown").value = seconds;
+
+        // When 0, reset the time we're counting down to
+        if (distance == 0){
+            countdownTime = countdownTime + pidValues.controlInterval
+        }
+    }
+
     function generateControlValue(pidValues, controlData){
         currentDate = new Date();
         console.log(((currentDate.getTime() - controlData.lastRun.getTime())/1000));
+        document.getElementById("calculationCountdown").value = Math.floor(((currentDate.getTime() - controlData.lastRun.getTime())/1000));
         if (((currentDate.getTime() - controlData.lastRun.getTime())/1000) >= pidValues.controlInterval ){
             $.ajax({
                 type: 'GET',
@@ -306,8 +340,13 @@
 
             // Flow level between 0 and 255
             flowLevel = data *pidValues.domainMultiplier;
-            if (flowLevel < 0){
-                flowLevel = 0;
+            if (flowLevel <= 99 ){
+                if (flowLevel < 0){
+                    flowLevel = 0;
+                }else{
+                    flowLevel = flowLevel;
+                }
+                
             }
             if (flowLevel > 255){
                 flowLevel = 255;
@@ -331,19 +370,20 @@
             //Sleep time between 0 secs and 30 seconds (30000 ms)
             sleepTime = pidValues.domainConstant * 1000;
             if (sleepTime < 0){
-                sleepTime == 0;
+                sleepTime = 0;
             }
             if (sleepTime > 30000){
-                sleepTime == 30000;
+                sleepTime = 30000;
             }
 
             // Flow level between 0 and 255
-            flowLevel = data *pidValues.domainMultiplier;
-            if (flowLevel < 0){
-                flowLevel == 0;
-            }
-            if (flowLevel > 255){
-                flowLevel == 255;
+            if (flowLevel <= 99 ){
+                if (flowLevel < 0){
+                    flowLevel = 0;
+                }else{
+                    flowLevel = 127;
+                }
+                
             }
 
             document.getElementById("currentFlowValue").value = flowLevel;
