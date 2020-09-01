@@ -15,6 +15,8 @@ class SmokeComms:
 
         self.port = port
         self.dmx = DmxPy.DmxPy(self.port)
+        self.dmx.blackout()
+        self.dmx.render()
         print("Ready")
 
     def __del__(self):
